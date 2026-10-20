@@ -1,28 +1,47 @@
 # DLL Proxy Helper
-DLL Proxy Helper is a tool designed to help with DLL proxying by printing a list of target DLL exported functions.
+
+Reads exported symbols from a PE DLL and either prints linker forward pragmas or writes a **compile-ready proxy `.cpp`**.
+
+## Build
+
+```bat
+build.bat
+```
+
+Output: `bin\helper.exe`
+
 ## Usage
-```
-helper.exe <DLL path>
+
+```text
+helper.exe <source_dll> [-o proxy.cpp] [forward_dll]
 ```
 
-### Example
-```
-./helper.exe c:/windows/system32/user32.dll
+| Argument | Description |
+|----------|-------------|
+| `source_dll` | DLL to read exports from |
+| `-o proxy.cpp` | Write full proxy source (includes + export pragmas + generic `DllMain`) |
+| `forward_dll` | Optional module to forward to (e.g. `apiclientt.dll`). If omitted, forwards use `source_dll` |
+
+### Legacy mode (stdout only)
+
+```bat
+helper.exe c:/windows/system32/user32.dll
 ```
 
-```cpp
-#pragma comment(linker, "/export:ActivateKeyboardLayout=c:/windows/system32/user32.dll.ActivateKeyboardLayout")
-#pragma comment(linker, "/export:AddClipboardFormatListener=c:/windows/system32/user32.dll.AddClipboardFormatListener")
-#pragma comment(linker, "/export:AddVisualIdentifier=c:/windows/system32/user32.dll.AddVisualIdentifier")
-#pragma comment(linker, "/export:AdjustWindowRect=c:/windows/system32/user32.dll.AdjustWindowRect")
-#pragma comment(linker, "/export:AdjustWindowRectEx=c:/windows/system32/user32.dll.AdjustWindowRectEx")
-#pragma comment(linker, "/export:AdjustWindowRectExForDpi=c:/windows/system32/user32.dll.AdjustWindowRectExForDpi")
-#pragma comment(linker, "/export:AlignRects=c:/windows/system32/user32.dll.AlignRects")
-#pragma comment(linker, "/export:AllowForegroundActivation=c:/windows/system32/user32.dll.AllowForegroundActivation")
-#pragma comment(linker, "/export:AllowSetForegroundWindow=c:/windows/system32/user32.dll.AllowSetForegroundWindow")
-#pragma comment(linker, "/export:AnimateWindow=c:/windows/system32/user32.dll.AnimateWindow")
-#pragma comment(linker, "/export:AnyPopup=c:/windows/system32/user32.dll.AnyPopup")
-#pragma comment(linker, "/export:AppendMenuA=c:/windows/system32/user32.dll.AppendMenuA")
-#pragma comment(linker, "/export:AppendMenuW=c:/windows/system32/user32.dll.AppendMenuW")
-...
+### Generate proxy source
+
+```bat
+helper.exe c:/users/neo/downloads/apiclient.dll -o apiclient_proxy.cpp apiclientt.dll
+```
+
+### Compile generated proxy
+
+```bat
+cl /LD /O2 /EHsc apiclient_proxy.cpp /Fe:apiclient.dll
+```
+
+Link an extra payload object if needed:
+
+```bat
+cl /LD /O2 /EHsc apiclient_proxy.cpp ..\shared\token_cmd_spawn.cpp /Fe:apiclient.dll
 ```
